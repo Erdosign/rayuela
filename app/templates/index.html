@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Novel Writing App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Welcome to Your Novel Writing Space</h1>
+        
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ total_novels }}</h5>
+                        <p class="card-text">Total Novels</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ total_chapters }}</h5>
+                        <p class="card-text">Total Chapters</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ total_words }}</h5>
+                        <p class="card-text">Total Words</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create New Novel Button -->
+        <div class="mb-4">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newNovelModal">
+                📝 Start New Novel
+            </button>
+        </div>
+
+        <!-- Recent Novels -->
+        <div class="row">
+            <div class="col-12">
+                <h3>Your Recent Novels</h3>
+                {% if novels %}
+                    <div class="row">
+                        {% for novel in novels[-3:] %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ novel.title }}</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">by {{ novel.author }}</h6>
+                                    <p class="card-text">{{ novel.description[:100] }}...</p>
+                                    <p class="text-muted small">
+                                        {{ novel.chapter_count }} chapters • {{ novel.word_count }} words
+                                    </p>
+                                    <a href="/novels/{{ novel.id }}" class="btn btn-outline-primary btn-sm">Open</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No novels yet. Create your first novel to get started!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Novel Modal -->
+<div class="modal fade" id="newNovelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Novel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="/novels">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="author" class="form-label">Author *</label>
+                        <input type="text" class="form-control" id="author" name="author" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Novel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block title %}My Projects - Novel Writing App{% endblock %}
+
+{% block nav_projects %}active{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active" aria-current="page">
+            <i class="bi bi-folder me-1"></i>Projects
+        </li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-1">My Writing Projects</h1>
+        <p class="text-muted mb-0">Manage and organize your novel writing projects</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#importModal">
+            <i class="bi bi-upload me-1"></i>Import
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProjectModal">
+            <i class="bi bi-plus-lg me-1"></i>New Project
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Project Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title mb-1">Total Projects</h6>
+                        <h3 class="mb-0">{{ projects|length if projects else 0 }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-folder-fill fs-2 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title mb-1">Total Words</h6>
+                        <h3 class="mb-0 word-count">{{ total_words|number_format if total_words else '0' }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-type fs-2 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title mb-1">In Progress</h6>
+                        <h3 class="mb-0">{{ in_progress_count if in_progress_count else 0 }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-pencil-fill fs-2 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title mb-1">Completed</h6>
+                        <h3 class="mb-0">{{ completed_count if completed_count else 0 }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-check-circle-fill fs-2 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter and Sort Controls -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" class="form-control" placeholder="Search projects..." id="searchInput">
+        </div>
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" id="genreFilter">
+            <option value="">All Genres</option>
+            <option value="fiction">Fiction</option>
+            <option value="non-fiction">Non-Fiction</option>
+            <option value="fantasy">Fantasy</option>
+            <option value="sci-fi">Sci-Fi</option>
+            <option value="romance">Romance</option>
+            <option value="mystery">Mystery</option>
+            <option value="thriller">Thriller</option>
+            <option value="other">Other</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" id="sortSelect">
+            <option value="updated">Last Updated</option>
+            <option value="created">Date Created</option>
+            <option value="title">Title A-Z</option>
+            <option value="words">Word Count</option>
+        </select>
+    </div>
+</div>
+
+<!-- Projects Grid -->
+<div class="row" id="projectsGrid">
+    {% if projects %}
+        {% for project in projects %}
+        <div class="col-lg-4 col-md-6 mb-4 project-card" 
+             data-title="{{ project.title|lower }}" 
+             data-genre="{{ project.genre|lower if project.genre else '' }}"
+             data-created="{{ project.created_at }}"
+             data-updated="{{ project.updated_at }}"
+             data-words="{{ project.word_count or 0 }}">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <!-- Project Header -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="flex-grow-1">
+                            <h5 class="card-title mb-1">
+                                <a href="{{ url_for('project_detail', project_id=project.id) if url_for else '/projects/' + project.id|string }}" 
+                                   class="text-decoration-none">
+                                    {{ project.title }}
+                                </a>
+                            </h5>
+                            {% if project.genre %}
+                                <span class="badge bg-secondary">{{ project.genre|title }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-files me-2"></i>Duplicate</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-download me-2"></i>Export</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i>Delete</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Project Description -->
+                    {% if project.description %}
+                    <p class="card-text text-muted mb-3">
+                        {{ project.description[:120] }}{% if project.description|length > 120 %}...{% endif %}
+                    </p>
+                    {% endif %}
+
+                    <!-- Project Statistics -->
+                    <div class="row text-center mb-3 small">
+                        <div class="col-4">
+                            <div class="text-muted">Chapters</div>
+                            <div class="fw-semibold">{{ project.chapters_count or 0 }}</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-muted">Scenes</div>
+                            <div class="fw-semibold">{{ project.scenes_count or 0 }}</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-muted">Words</div>
+                            <div class="fw-semibold word-count">{{ project.word_count|number_format if project.word_count else '0' }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    {% if project.target_word_count and project.target_word_count > 0 %}
+                    <div class="mb-3">
+                        {% set progress = ((project.word_count or 0) / project.target_word_count * 100)|round(1) %}
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted">Progress</small>
+                            <small class="text-muted">{{ progress }}%</small>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: {{ progress }}%" 
+                                 aria-valuenow="{{ progress }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Project Footer -->
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="small text-muted">
+                                <i class="bi bi-clock me-1"></i>
+                                Updated {{ project.updated_at|timeago if project.updated_at else 'recently' }}
+                            </div>
+                            <div class="d-flex gap-1">
+                                {% if project.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% elif project.status == 'in_progress' %}
+                                    <span class="badge bg-primary">In Progress</span>
+                                {% elif project.status == 'draft' %}
+                                    <span class="badge bg-secondary">Draft</span>
+                                {% elif project.status == 'planning' %}
+                                    <span class="badge bg-info">Planning</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <!-- Empty State -->
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-folder2-open display-1 text-muted mb-3"></i>
+                <h3 class="text-muted mb-3">No Projects Yet</h3>
+                <p class="text-muted mb-4">Start your writing journey by creating your first project.</p>
+                <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#newProjectModal">
+                    <i class="bi bi-plus-lg me-2"></i>Create Your First Project
+                </button>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- New Project Modal -->
+<div class="modal fade" id="newProjectModal" tabindex="-1" aria-labelledby="newProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newProjectModalLabel">Create New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('create_project') if url_for else '/projects' }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="projectTitle" class="form-label">Project Title *</label>
+                        <input type="text" class="form-control" id="projectTitle" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="projectGenre" class="form-label">Genre</label>
+                        <select class="form-select" id="projectGenre" name="genre">
+                            <option value="">Select a genre</option>
+                            <option value="fiction">Fiction</option>
+                            <option value="non-fiction">Non-Fiction</option>
+                            <option value="fantasy">Fantasy</option>
+                            <option value="sci-fi">Science Fiction</option>
+                            <option value="romance">Romance</option>
+                            <option value="mystery">Mystery</option>
+                            <option value="thriller">Thriller</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="projectDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="projectDescription" name="description" rows="3" 
+                                  placeholder="Brief description of your project..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="targetWordCount" class="form-label">Target Word Count</label>
+                        <input type="number" class="form-control" id="targetWordCount" name="target_word_count" 
+                               placeholder="e.g., 80000">
+                        <div class="form-text">Optional: Set a word count goal for your project</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">Import Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="importFile" class="form-label">Choose File</label>
+                    <input type="file" class="form-control" id="importFile" name="file" accept=".docx,.txt,.md">
+                    <div class="form-text">Supported formats: DOCX, TXT, Markdown</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary">Import</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const genreFilter = document.getElementById('genreFilter');
+    const sortSelect = document.getElementById('sortSelect');
+    const projectCards = document.querySelectorAll('.project-card');
+    
+    // Search functionality
+    searchInput.addEventListener('input', filterProjects);
+    genreFilter.addEventListener('change', filterProjects);
+    sortSelect.addEventListener('change', sortProjects);
+    
+    function filterProjects() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedGenre = genreFilter.value.toLowerCase();
+        
+        projectCards.forEach(card => {
+            const title = card.dataset.title;
+            const genre = card.dataset.genre;
+            
+            const matchesSearch = title.includes(searchTerm);
+            const matchesGenre = !selectedGenre || genre === selectedGenre;
+            
+            if (matchesSearch && matchesGenre) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+    
+    function sortProjects() {
+        const container = document.getElementById('projectsGrid');
+        const cards = Array.from(projectCards);
+        const sortBy = sortSelect.value;
+        
+        cards.sort((a, b) => {
+            switch (sortBy) {
+                case 'title':
+                    return a.dataset.title.localeCompare(b.dataset.title);
+                case 'created':
+                    return new Date(b.dataset.created) - new Date(a.dataset.created);
+                case 'updated':
+                    return new Date(b.dataset.updated) - new Date(a.dataset.updated);
+                case 'words':
+                    return parseInt(b.dataset.words) - parseInt(a.dataset.words);
+                default:
+                    return 0;
+            }
+        });
+        
+        cards.forEach(card => container.appendChild(card));
+    }
+});
+</script>
+{% endblock %}

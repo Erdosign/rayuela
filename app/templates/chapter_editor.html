@@ -1,0 +1,80 @@
+<!-- app/templates/chapter_editor.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ chapter.title }} - {{ novel.title }}{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item"><a href="/novels">Novels</a></li>
+            <li class="breadcrumb-item"><a href="/novels/{{ novel.id }}">{{ novel.title }}</a></li>
+            <li class="breadcrumb-item active">{{ chapter.title }}</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <form method="post" action="/chapters/{{ chapter.id }}" id="chapterForm">
+            <input type="hidden" name="_method" value="PUT">
+            
+            <div class="mb-3">
+                <label for="chapterTitle" class="form-label">Chapter Title</label>
+                <input type="text" class="form-control" id="chapterTitle" name="title" 
+                       value="{{ chapter.title }}" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="content" class="form-label">Content</label>
+                <textarea class="form-control" id="content" name="content" rows="20" 
+                          style="min-height: 500px;">{{ chapter.content }}</textarea>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <div>
+                    <button type="submit" class="btn btn-primary">💾 Save Chapter</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="autoSave()">⚡ Quick Save</button>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-outline-danger" onclick="deleteChapter()">🗑️ Delete</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card sticky-top" style="top: 20px;">
+            <div class="card-header">
+                <h6 class="mb-0">Chapter Stats</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Word Count:</strong>
+                    <span id="wordCount">{{ chapter.word_count }}</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Character Count:</strong>
+                    <span id="charCount">{{ chapter.content|length }}</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Last Updated:</strong>
+                    <div class="small text-muted">{{ chapter.updated_at[:16].replace('T', ' ') }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">Writing Tips</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled small">
+                    <li>💡 <strong>Ctrl+S</strong> to quick save</li>
+                    <li>📊 Word count updates as you type</li>
+                    <li>💾 Auto-save every 5 minutes</li>
+                    <li>🎯 Aim for 1,500-3,000 words per chapter</li>
+                </ul>
+            </div>
+        </div>
