@@ -21,10 +21,13 @@ class ProjectCRUD:
         return project
     
     @staticmethod
-    def get_by_id(db: Session, project_id: int) -> Optional[Project]:
+    def get_by_id(db: Session, project_id: int, active_only: bool = True) -> Optional[Project]:
         """Get project by ID."""
-        return db.query(Project).filter(Project.id == project_id).first()
-    
+        query = db.query(Project).filter(Project.id == project_id)
+        if active_only:
+            query = query.filter(Project.is_active == True)
+        return query.first()
+            
     @staticmethod
     def get_all(db: Session, active_only: bool = True) -> List[Project]:
         """Get all projects."""
@@ -36,7 +39,10 @@ class ProjectCRUD:
     @staticmethod
     def update(db: Session, project_id: int, **kwargs) -> Optional[Project]:
         """Update project."""
-        project = db.query(Project).filter(Project.id == project_id).first()
+        project = db.query(Project).filter(
+            Project.id == project_id,
+            Project.is_active == True
+        ).first()
         if project:
             for key, value in kwargs.items():
                 if hasattr(project, key):
@@ -78,13 +84,18 @@ class ChapterCRUD:
         return chapter
     
     @staticmethod
-    def get_by_id(db: Session, chapter_id: int) -> Optional[Chapter]:
+    def get_by_id(db: Session, active_only, chapter_id: int) -> Optional[Chapter]:
         """Get chapter by ID."""
-        return db.query(Chapter).filter(Chapter.id == chapter_id).first()
+        query = db.query(Chapter).filter(Chapter.id == chapter_id)
+        if active_only:
+            query = query.filter(Chapter.is_active == True)
+        return query.first()
     
     @staticmethod
-    def get_by_project(db: Session, project_id: int) -> List[Chapter]:
+    def get_by_project(db: Session, active_only, project_id: int) -> List[Chapter]:
         """Get all chapters for a project, ordered by order_index."""
+        # query = 
+        # if active_only:
         return db.query(Chapter).filter(
             Chapter.project_id == project_id
         ).order_by(Chapter.order_index).all()

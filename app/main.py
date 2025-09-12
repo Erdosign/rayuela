@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi import Request
 import os
 
 # Import routers
@@ -33,6 +35,9 @@ app.include_router(novels.router, prefix="/api")
 app.include_router(chapters.router, prefix="/api")
 app.include_router(scenes.router, prefix="/api")
 
+# Load Jinja2 templates
+templates = Jinja2Templates(directory="app/templates")
+
 # Mount static files
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -46,6 +51,36 @@ async def startup_event():
         print("✅ Database initialized successfully")
     except Exception as e:
         print(f"❌ Failed to initialize database: {e}")
+        
+@app.get("/projects")
+async def projects_list_page(request: Request):
+    """Web interface: Projects list page"""
+    # TODO: Fetch actual projects from database
+    projects = []  # Replace with actual database call
+    return templates.TemplateResponse("projects_list.html", {
+        "request": request,
+        "projects": projects,
+        "total_words": 0,
+        "in_progress_count": 0,
+        "completed_count": 0
+    })
+
+@app.get("/projects/{project_id}")
+async def project_detail_page(request: Request, project_id: int):
+    """Web interface: Project detail page"""
+    # TODO: Fetch actual project from database
+    project = {
+        "id": project_id,
+        "title": "Sample Project",
+        "description": "This is a sample project",
+        "genre": "fiction",
+        "status": "in_progress"
+    }  # Replace with actual database call
+    
+    return templates.TemplateResponse("project_detail.html", {
+        "request": request,
+        "project": project
+    })
 
 # Root endpoint
 @app.get("/", response_class=HTMLResponse)
