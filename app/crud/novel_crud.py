@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from app.models.novel import Project, Chapter, Scene
 
@@ -42,7 +42,7 @@ class ProjectCRUD:
             for key, value in kwargs.items():
                 if hasattr(project, key):
                     setattr(project, key, value)
-            project.updated_at = datetime.utcnow()
+            project.updated_at = datetime.now(timezone.utc)
             db.commit()
             db.refresh(project)
         return project
@@ -53,7 +53,7 @@ class ProjectCRUD:
         project = db.query(Project).filter(Project.id == project_id).first()
         if project:
             project.is_active = False
-            project.updated_at = datetime.utcnow()
+            project.updated_at = datetime.now(timezone.utc)
             db.commit()
             return True
         return False
@@ -118,7 +118,7 @@ class ChapterCRUD:
             ).update({Chapter.order_index: Chapter.order_index + 1})
 
         chapter.order_index = new_order
-        chapter.updated_at = datetime.utcnow()
+        chapter.updated_at = datetime.now(timezone.utc)
         db.commit()
         return True
 
@@ -130,7 +130,7 @@ class ChapterCRUD:
             for key, value in kwargs.items():
                 if hasattr(chapter, key) and key != 'order_index':
                     setattr(chapter, key, value)
-            chapter.updated_at = datetime.utcnow()
+            chapter.updated_at = datetime.now(timezone.utc)
             db.commit()
             db.refresh(chapter)
         return chapter
@@ -142,18 +142,47 @@ class ChapterCRUD:
         if chapter:
             project_id = chapter.project_id
             order_index = chapter.order_index
-
+    
             db.delete(chapter)
-
+    
             # Reorder remaining chapters
             db.query(Chapter).filter(
                 Chapter.project_id == project_id,
                 Chapter.order_index > order_index
             ).update({Chapter.order_index: Chapter.order_index - 1})
-
+    
             db.commit()
+    
+            # Update project word count after chapter deletion
+            ChapterCRUD._update_project_word_count(db, project_id)
             return True
         return False
+    
+    @staticmethod
+    def _update_project_word_count(db: Session, project_id: int):
+        """Update project word count based on its chapters."""
+        total_words = db.query(func.sum(Chapter.word_count)).filter(
+            Chapter.project_id == project_id).scalar() or 0
+    
+        project = db.query(Project).filter(Project.id == project_id).first()
+        if project:
+            project.current_word_count = total_words
+            project.updated_at = datetime.now(timezone.utc)
+            db.commit()
+
+    @staticmethod
+    def _update_chapter_word_count(db: Session, chapter_id: int):
+        """Update chapter word count based on its scenes."""
+        total_words = db.query(func.sum(Scene.word_count)).filter(
+            Scene.chapter_id == chapter_id).scalar() or 0
+    
+        chapter = db.query(Chapter).filter(Chapter.id == chapter_id).first()
+        if chapter:
+            chapter.word_count = total_words
+            
+            # Update project word count
+            ChapterCRUD._update_project_word_count(db, chapter.project_id)
+            db.commit()
 
 
 class SceneCRUD:
@@ -220,7 +249,7 @@ class SceneCRUD:
             ).update({Scene.order_index: Scene.order_index + 1})
 
         scene.order_index = new_order
-        scene.updated_at = datetime.utcnow()
+        scene.updated_at = datetime.now(timezone.utc)
         db.commit()
         return True
 
@@ -237,7 +266,7 @@ class SceneCRUD:
             if 'content' in kwargs:
                 scene.word_count = len(kwargs['content'].split()) if kwargs['content'] else 0
 
-            scene.updated_at = datetime.utcnow()
+            scene.updated_at = datetime.now(timezone.utc)
             db.commit()
             db.refresh(scene)
 
@@ -285,6 +314,6 @@ class SceneCRUD:
             project = db.query(Project).filter(Project.id == chapter.project_id).first()
             if project:
                 project.current_word_count = project_total
-                project.updated_at = datetime.utcnow()
+                project.updated_at = datetime.now(timezone.utc)
 
             db.commit()

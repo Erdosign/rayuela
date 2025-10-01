@@ -58,7 +58,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <i class="bi bi-file-text display-4 text-success mb-2"></i>
-                <h5 class="card-title">{{ chapters|sum(attribute='scenes')|length if chapters else 0 }}</h5>
+                <h5 class="card-title">{{ total_scenes }}</h5>
                 <p class="card-text text-muted">Scenes</p>
             </div>
         </div>
@@ -82,6 +82,7 @@
         </div>
     </div>
 </div>
+
 
 <!-- Progress Bar -->
 {% if project.target_word_count and project.target_word_count > 0 %}
@@ -161,4 +162,14 @@
                 {% else %}
                     <div class="text-center py-5">
                         <i class="bi bi-book display-1 text-muted mb-3"></i>
+                        <p class="text-muted">No chapters yet. Create your first chapter to get started!</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newChapterModal">
+                            <i class="bi bi-plus-lg me-1"></i>Create First Chapter
+                        </button>
+                    </div>
                 {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

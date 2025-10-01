@@ -1,13 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.database.connection import get_db
+from fastapi.templating import Jinja2Templates
 from app.crud.novel_crud import ProjectCRUD
 from app.schemas.novel import (
     Project, ProjectSimple, ProjectCreate, ProjectUpdate, StatusResponse
 )
 
 router = APIRouter(prefix="/projects", tags=["projects"])
+
+templates = Jinja2Templates(directory="templates")
 
 @router.post("/", response_model=ProjectSimple, status_code=status.HTTP_201_CREATED)
 def create_project(
@@ -48,6 +51,7 @@ def get_projects(
 @router.get("/{project_id}", response_model=Project)
 def get_project(
     project_id: int,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """Get a specific project by ID with all chapters and scenes."""
@@ -64,7 +68,19 @@ def get_project(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project with ID {project_id} not found"
             )
-        return db_project
+        # Calculate total scenes for the template
+        total_scenes = sum(len(chapter.scenes) for chapter in db_project.chapters)
+        
+        # Return template response instead of JSON
+        return templates.TemplateResponse(
+            "project_detail.html",  # Your template file name
+            {
+                "request": request,
+                "project": db_project,
+                "chapters": db_project.chapters,
+                "total_scenes": total_scenes  # Pass the calculated total
+            }
+        )
     except HTTPException:
         raise
     except Exception as e:

@@ -1,15 +1,15 @@
 <!-- app/templates/chapter_editor.html -->
 {% extends "base.html" %}
 
-{% block title %}{{ chapter.title }} - {{ novel.title }}{% endblock %}
+{% block title %}{{ chapter.title }} - {{ project.title }}{% endblock %}
 
 {% block content %}
 <div class="mb-3">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="/">Home</a></li>
-            <li class="breadcrumb-item"><a href="/novels">Novels</a></li>
-            <li class="breadcrumb-item"><a href="/novels/{{ novel.id }}">{{ novel.title }}</a></li>
+            <li class="breadcrumb-item"><a href="/projects">Novels</a></li>
+            <li class="breadcrumb-item"><a href="/projects/{{ project.id }}">{{ project.title }}</a></li>
             <li class="breadcrumb-item active">{{ chapter.title }}</li>
         </ol>
     </nav>
@@ -17,7 +17,7 @@
 
 <div class="row">
     <div class="col-lg-8">
-        <form method="post" action="/chapters/{{ chapter.id }}" id="chapterForm">
+        <form method="post" action="/projects/{{ project.id }}/chapters/{{ chapter.id }}" id="chapterForm">
             <input type="hidden" name="_method" value="PUT">
             
             <div class="mb-3">
@@ -60,7 +60,7 @@
                 </div>
                 <div class="mb-2">
                     <strong>Last Updated:</strong>
-                    <div class="small text-muted">{{ chapter.updated_at[:16].replace('T', ' ') }}</div>
+                    <div class="small text-muted">{{ chapter.updated_at.strftime('%Y-%m-%d %H:%M') }}</div>
                 </div>
             </div>
         </div>
@@ -78,3 +78,6 @@
                 </ul>
             </div>
         </div>
+    </div>
+</div>
+{% endblock %}

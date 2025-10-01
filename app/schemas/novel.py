@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
@@ -65,8 +65,7 @@ class Scene(SceneBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class Chapter(ChapterBase):
     id: int
@@ -78,8 +77,7 @@ class Chapter(ChapterBase):
     updated_at: datetime
     scenes: List[Scene] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class Project(ProjectBase):
     id: int
@@ -89,8 +87,7 @@ class Project(ProjectBase):
     updated_at: datetime
     chapters: List[Chapter] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Simplified response schemas (without nested relationships)
 class ProjectSimple(ProjectBase):
@@ -100,8 +97,7 @@ class ProjectSimple(ProjectBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ChapterSimple(ChapterBase):
     id: int
@@ -112,8 +108,7 @@ class ChapterSimple(ChapterBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SceneSimple(SceneBase):
     id: int
@@ -124,8 +119,7 @@ class SceneSimple(SceneBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Status response schemas
 class StatusResponse(BaseModel):
