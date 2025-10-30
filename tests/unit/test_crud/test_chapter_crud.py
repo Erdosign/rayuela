@@ -2,8 +2,15 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.models.novel import Project, Chapter
-from app.crud.novel_crud import ProjectCRUD, ChapterCRUD
+from app.crud.novel_crud import ProjectCRUD, ChapterCRUD, SceneCRUD
 from datetime import datetime
+
+@pytest.fixture
+def sample_project_and_chapter(db_session):
+    """Create sample project and chapter for tests."""
+    project = ProjectCRUD.create(db_session, "Test Project")
+    chapter = ChapterCRUD.create(db_session, project.id, "Test Chapter")
+    return project, chapter
 
 class TestChapterCRUD:
     @pytest.fixture
@@ -36,6 +43,7 @@ class TestChapterCRUD:
         assert chapter.description == "First chapter"
         assert chapter.project_id == sample_project.id
         assert chapter.order_index == 1
+        
 
     def test_create_multiple_chapters_order(self, db_session, sample_project):
         """Test that chapters get correct order indices."""
@@ -155,3 +163,81 @@ class TestChapterCRUD:
         """Test deleting a non-existent chapter."""
         result = ChapterCRUD.delete(db_session, 999)
         assert result == False
+        
+    def test_update_project_word_count(self, db_session):
+        """Test that project word count is updated correctly."""
+        # Create project and chapters
+        project = ProjectCRUD.create(db_session, "Test Project")
+        chapter1 = ChapterCRUD.create(db_session, project.id, "Chapter 1")
+        chapter2 = ChapterCRUD.create(db_session, project.id, "Chapter 2")
+        
+        # Set initial word counts manually
+        chapter1.word_count = 100
+        chapter2.word_count = 200
+        db_session.commit()
+        
+        # Call the internal method
+        ChapterCRUD._update_project_word_count(db_session, project.id)
+        
+        # Refresh and verify
+        db_session.refresh(project)
+        assert project.current_word_count == 300  # 100 + 200
+        
+    def test_update_project_word_count_empty(self, db_session):
+        """Test project word count with no chapters."""
+        project = ProjectCRUD.create(db_session, "Empty Project")
+        
+        # Call the internal method
+        ChapterCRUD._update_project_word_count(db_session, project.id)
+        
+        # Refresh and verify
+        db_session.refresh(project)
+        assert project.current_word_count == 0
+        
+    def test_update_project_word_count_none_values(self, db_session):
+        """Test project word count with None values in chapters."""
+        project = ProjectCRUD.create(db_session, "Test Project")
+        chapter1 = ChapterCRUD.create(db_session, project.id, "Chapter 1")
+        chapter2 = ChapterCRUD.create(db_session, project.id, "Chapter 2")
+        
+        # Set one chapter to None word count
+        chapter1.word_count = None
+        chapter2.word_count = 150
+        db_session.commit()
+        
+        # Call the internal method
+        ChapterCRUD._update_project_word_count(db_session, project.id)
+        
+        # Refresh and verify (None should be treated as 0)
+        db_session.refresh(project)
+        assert project.current_word_count == 150
+        
+    def test_update_order_invalid_chapter(self, db_session):
+        """Test updating order for non-existent chapter."""
+        result = ChapterCRUD.update_order(db_session, 99999, 1)
+        assert result == False
+        
+    def test_update_chapter_word_count_directly(self, db_session, sample_project_and_chapter):
+        """Test the internal _update_chapter_word_count method directly."""
+        project, chapter = sample_project_and_chapter
+        
+        # Create scenes with word counts
+        scene1 = SceneCRUD.create(db_session, chapter.id, content="Four words here now")
+        scene2 = SceneCRUD.create(db_session, chapter.id, content="Three words here")
+        
+        # Call the internal method directly
+        ChapterCRUD._update_chapter_word_count(db_session, chapter.id)
+        
+        # Verify the chapter word count was updated
+        db_session.refresh(chapter)
+        assert chapter.word_count == 7
+        
+    def test_update_chapter_word_count_no_chapter(self, db_session):
+        """Test _update_chapter_word_count with non-existent chapter."""
+        # Should not raise an error
+        ChapterCRUD._update_chapter_word_count(db_session, 99999)
+        
+    def test_update_scene_order_invalid_scene(self, db_session):
+        """Test updating order for non-existent scene."""
+        result = SceneCRUD.update_order(db_session, 99999, 1)
+        assert result == False  # This would cover line 298

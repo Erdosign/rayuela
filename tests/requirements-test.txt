@@ -11,3 +11,4 @@ python-multipart==0.0.6
 pytest==7.4.3
 httpx==0.25.2  # For making async HTTP requests in tests
 pytest-asyncio==0.21.1 # If you have async tests
+pytest-cov>=4.0.0

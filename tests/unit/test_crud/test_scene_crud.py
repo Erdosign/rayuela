@@ -165,3 +165,129 @@ class TestSceneCRUD:
            # Refresh chapter again
            db_session.refresh(chapter)
            assert chapter.word_count == 6  # Fixed: 3 (scene1) + 3 (scene2) = 6 words
+           
+    def test_update_scene_order_move_down(self, db_session, sample_project_and_chapter):
+        """Test updating scene order (moving scene down in list)."""
+        project, chapter = sample_project_and_chapter
+        
+        # Create scenes
+        scene1 = SceneCRUD.create(db_session, chapter.id, "Scene 1")
+        scene2 = SceneCRUD.create(db_session, chapter.id, "Scene 2") 
+        scene3 = SceneCRUD.create(db_session, chapter.id, "Scene 3")
+        scene4 = SceneCRUD.create(db_session, chapter.id, "Scene 4")
+        
+        # Move scene1 from position 1 to position 3
+        result = SceneCRUD.update_order(db_session, scene1.id, 3)
+        
+        assert result == True
+        
+        # Verify new order
+        scenes = SceneCRUD.get_by_chapter(db_session, chapter.id)
+        assert scenes[0].title == "Scene 2"  # Now first (was 2)
+        assert scenes[1].title == "Scene 3"  # Now second (was 3)
+        assert scenes[2].title == "Scene 1"  # Now third (was 1)
+        assert scenes[3].title == "Scene 4"  # Still fourth
+        
+        assert scenes[0].order_index == 1
+        assert scenes[1].order_index == 2  
+        assert scenes[2].order_index == 3
+        assert scenes[3].order_index == 4
+        
+    def test_update_scene_order_move_up(self, db_session, sample_project_and_chapter):
+        """Test updating scene order (moving scene up in list)."""
+        project, chapter = sample_project_and_chapter
+        
+        # Create scenes
+        scene1 = SceneCRUD.create(db_session, chapter.id, "Scene 1")
+        scene2 = SceneCRUD.create(db_session, chapter.id, "Scene 2")
+        scene3 = SceneCRUD.create(db_session, chapter.id, "Scene 3")
+        scene4 = SceneCRUD.create(db_session, chapter.id, "Scene 4")
+        
+        # Move scene4 from position 4 to position 1
+        result = SceneCRUD.update_order(db_session, scene4.id, 1)
+        
+        assert result == True
+        
+        # Verify new order
+        scenes = SceneCRUD.get_by_chapter(db_session, chapter.id)
+        assert scenes[0].title == "Scene 4"  # Now first (was 4)
+        assert scenes[1].title == "Scene 1"  # Now second (was 1)
+        assert scenes[2].title == "Scene 2"  # Now third (was 2)
+        assert scenes[3].title == "Scene 3"  # Now fourth (was 3)
+        
+        assert scenes[0].order_index == 1
+        assert scenes[1].order_index == 2
+        assert scenes[2].order_index == 3
+        assert scenes[3].order_index == 4
+
+    def test_update_scene_order_same_position(self, db_session, sample_project_and_chapter):
+        """Test updating scene order to same position (no change)."""
+        project, chapter = sample_project_and_chapter
+        
+        scene1 = SceneCRUD.create(db_session, chapter.id, "Scene 1")
+        scene2 = SceneCRUD.create(db_session, chapter.id, "Scene 2")
+        
+        # Move scene1 to position 1 (same position)
+        result = SceneCRUD.update_order(db_session, scene1.id, 1)
+        
+        assert result == True
+        
+        # Verify order unchanged
+        scenes = SceneCRUD.get_by_chapter(db_session, chapter.id)
+        assert scenes[0].title == "Scene 1"
+        assert scenes[1].title == "Scene 2"
+        assert scenes[0].order_index == 1
+        assert scenes[1].order_index == 2
+        
+    def test_update_scene_order_invalid_scene(self, db_session):
+        """Test updating order for non-existent scene."""
+        result = SceneCRUD.update_order(db_session, 999, 1)
+        assert result == False
+        
+    def test_update_scene_order_edge_case_first_to_last(self, db_session, sample_project_and_chapter):
+        """Test moving first scene to last position."""
+        project, chapter = sample_project_and_chapter
+        
+        scene1 = SceneCRUD.create(db_session, chapter.id, "Scene 1")
+        scene2 = SceneCRUD.create(db_session, chapter.id, "Scene 2")
+        scene3 = SceneCRUD.create(db_session, chapter.id, "Scene 3")
+        
+        # Move scene1 from 1st to last (3rd) position
+        result = SceneCRUD.update_order(db_session, scene1.id, 3)
+        
+        assert result == True
+        
+        scenes = SceneCRUD.get_by_chapter(db_session, chapter.id)
+        assert scenes[0].title == "Scene 2"
+        assert scenes[1].title == "Scene 3" 
+        assert scenes[2].title == "Scene 1"
+        
+        assert scenes[0].order_index == 1
+        assert scenes[1].order_index == 2
+        assert scenes[2].order_index == 3
+        
+    def test_update_scene_order_edge_case_last_to_first(self, db_session, sample_project_and_chapter):
+        """Test moving last scene to first position."""
+        project, chapter = sample_project_and_chapter
+        
+        scene1 = SceneCRUD.create(db_session, chapter.id, "Scene 1")
+        scene2 = SceneCRUD.create(db_session, chapter.id, "Scene 2")
+        scene3 = SceneCRUD.create(db_session, chapter.id, "Scene 3")
+        
+        # Move scene3 from last (3rd) to first (1st) position
+        result = SceneCRUD.update_order(db_session, scene3.id, 1)
+        
+        assert result == True
+        
+        scenes = SceneCRUD.get_by_chapter(db_session, chapter.id)
+        assert scenes[0].title == "Scene 3"
+        assert scenes[1].title == "Scene 1"
+        assert scenes[2].title == "Scene 2"
+        
+        assert scenes[0].order_index == 1
+        assert scenes[1].order_index == 2
+        
+    def test_update_scene_order_invalid_scene(self, db_session):
+        """Test updating order for non-existent scene."""
+        result = SceneCRUD.update_order(db_session, 99999, 1)
+        assert result == False
