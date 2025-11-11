@@ -7,7 +7,7 @@ def test_imports():
         from app.crud.novel_crud import ProjectCRUD, ChapterCRUD, SceneCRUD
         print("✓ CRUD imports successfully")
         
-        from app.database.connection import Base, create_database
+        from app.database.connection import Base, get_db
         print("✓ Database imports successfully")
         
         assert True
