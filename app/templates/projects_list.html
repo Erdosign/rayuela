@@ -257,11 +257,16 @@
                 <h5 class="modal-title" id="newProjectModalLabel">Create New Project</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="{{ url_for('create_project') if url_for else '/projects' }}">
+            <form method="POST" action="/projects">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="projectTitle" class="form-label">Project Title *</label>
                         <input type="text" class="form-control" id="projectTitle" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="projectAuthor" class="form-label">Author</label>
+                        <input type="text" class="form-control" id="projectAuthor" name="author" 
+                        placeholder="Your name or pen name"> 
                     </div>
                     <div class="mb-3">
                         <label for="projectGenre" class="form-label">Genre</label>

@@ -4,8 +4,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
+from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 import os
+
+
 
 # Import routers
 from app.routers import novels, chapters, scenes
@@ -14,13 +17,26 @@ from app.routers import novels, chapters, scenes
 from app.database.connection import create_database, get_db
 from app.crud.novel_crud import ProjectCRUD, ChapterCRUD, SceneCRUD
 
+# Initialize database on startup
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    try:
+        create_database()
+        print("✅ Database initialized successfully")
+    except Exception as e:
+        print(f"❌ Failed to initialize database: {e}")
+    yield
+    # Shutdown
+
 # Create FastAPI app
 app = FastAPI(
     title="Novel Writing App API",
     description="A comprehensive API for managing novel writing projects, chapters, and scenes",
     version="1.0.0",
     docs_url="/api/docs",
-    redoc_url="/api/redoc"
+    redoc_url="/api/redoc",
+    lifespan=lifespan
 )
 
 # Add CORS middleware
@@ -33,9 +49,9 @@ app.add_middleware(
 )
 
 # Include API routers with API prefix
-app.include_router(novels.router, prefix="/api")
-app.include_router(chapters.router, prefix="/api")
-app.include_router(scenes.router, prefix="/api")
+app.include_router(novels.router)
+app.include_router(chapters.router)
+app.include_router(scenes.router)
 
 # Load Jinja2 templates
 templates = Jinja2Templates(directory="app/templates")
@@ -44,15 +60,18 @@ templates = Jinja2Templates(directory="app/templates")
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Initialize database on startup
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database tables on startup."""
-    try:
-        create_database()
-        print("✅ Database initialized successfully")
-    except Exception as e:
-        print(f"❌ Failed to initialize database: {e}")
+
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     # Startup
+#     try:
+#         create_database()
+#         print("✅ Database initialized successfully")
+#     except Exception as e:
+#         print(f"❌ Failed to initialize database: {e}")
+#     yield
+#     # Shutdown - you can leave this empty for now
+#     # Add any cleanup logic here if needed later
 
 
 # Add template filter for number formatting
@@ -120,7 +139,7 @@ async def projects_list(request: Request, db: Session = Depends(get_db)):
         })
 
 
-@app.post("/projects")
+@app.post("/projects/create")
 async def create_project_form(
         request: Request,
         title: str = Form(...),

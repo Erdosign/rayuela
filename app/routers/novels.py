@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.database.connection import get_db
 from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from app.crud.novel_crud import ProjectCRUD
 from app.schemas.novel import (
     Project, ProjectSimple, ProjectCreate, ProjectUpdate, StatusResponse
@@ -51,10 +52,9 @@ def get_projects(
 @router.get("/{project_id}", response_model=Project)
 def get_project(
     project_id: int,
-    request: Request,
     db: Session = Depends(get_db)
 ):
-    """Get a specific project by ID with all chapters and scenes."""
+    """Get a specific project by ID with all chapters and scenes as JSON."""
     if project_id <= 0:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -68,17 +68,47 @@ def get_project(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project with ID {project_id} not found"
             )
+        return db_project
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch project: {str(e)}"
+        )
+
+@router.get("/{project_id}/detail", response_class=HTMLResponse)
+def get_project_detail(
+    project_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """Get project detail page with chapters and scenes as HTML."""
+    if project_id <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Project ID must be a positive integer"
+        )
+    
+    try:
+        db_project = ProjectCRUD.get_by_id(db=db, project_id=project_id)
+        if db_project is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project with ID {project_id} not found"
+            )
+        
         # Calculate total scenes for the template
         total_scenes = sum(len(chapter.scenes) for chapter in db_project.chapters)
         
-        # Return template response instead of JSON
+        # Return template response for HTML
         return templates.TemplateResponse(
-            "project_detail.html",  # Your template file name
+            "project_detail.html",
             {
                 "request": request,
                 "project": db_project,
                 "chapters": db_project.chapters,
-                "total_scenes": total_scenes  # Pass the calculated total
+                "total_scenes": total_scenes
             }
         )
     except HTTPException:

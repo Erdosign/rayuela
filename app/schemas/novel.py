@@ -8,10 +8,19 @@ class ProjectBase(BaseModel):
     description: Optional[str] = Field(None, description="Project description")
     author: Optional[str] = Field(None, max_length=255, description="Author name")
     genre: Optional[str] = Field(None, max_length=100, description="Genre")
-    target_word_count: Optional[int] = Field(80000, ge=0, description="Target word count")
+    target_word_count: int = Field(default=80000, ge=0, description="Target word count")
 
 class ProjectCreate(ProjectBase):
     pass
+
+class ProjectFormCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    author: Optional[str] = None
+    genre: Optional[str] = None
+    target_word_count: Optional[int] = Field(None, ge=0)
+    
+    model_config = ConfigDict(extra='ignore')
 
 class ProjectUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
